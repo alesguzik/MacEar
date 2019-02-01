@@ -1,0 +1,95 @@
+			Lyon's Cochlear Model
+			By Malcolm Slaney
+			Apple Technical Report #13
+			(c) November 1988
+			Apple Computer, Inc.
+			malcolm@apple.com
+
+About this disk
+	This disk contains the electronic version of Apple Technical Report 
+	#13 which describes the implementation of Richard Lyon's model of the 
+	cochlea (the inner ear.)   This disk includes the following 
+	information.
+		1)	This README file
+		2)	Lyon's Cochlear Model (The Mathematica Notebook)
+		3)	C and Fortran source code to implement the model 
+			with real data (with manual page)
+		4)	A Mathematica notebook reader
+		5)	A introduction to Mathematica notebooks (Called 
+			"Read This First."
+
+How to use this floppy
+	The most interesting file on this disk is a Mathematica
+	notebook describing Richard Lyon's Cochlear Model.  This is a real 
+	live electronic document which can be read and modified by the 
+	Mathematica program.  We hope that most people will be able to 
+	acquire a copy of Mathematica and interact with the notebook.  This
+	is the best way to understand the material.
+
+How to run Mathematica
+	Mathematica runs on a number of different computers.  Some machines
+	(for example Macintoshes and NeXT) support the concept of a notebook.  
+	A notebook is a combination of words and equations that can be read 
+	like a normal paper.  In addition the notebook allows the user to 
+	interact with the equations and replot the figures (perhaps with new 
+	parameters).
+
+	The notebook reader provided with this technical report is a stripped
+	down version of the normal Mathematica front end.  This reader will
+	allow you to look at the notebook on a Macintosh but not to change 
+	any of the parameters or otherwise do any mathematics.  If you want to 
+	interact with the notebook you will need to aquire a copy of 
+	Mathematica for your favorite machine.  You can purchase a copy of 
+	Mathematica from either Wolfram Research (217 398-0700) or from an 
+	Apple software dealer.  See the "Read This First" Mathematica notebook 
+	for more details.
+
+	You can interact with the notebook using Mathematica on other machines
+	but the front end isn't quite as snazzy.  Equations in the model can
+	be changed but you will not be able to browse through the document 
+	electronically.  If you transfer the data fork of the notebook to a
+	different machine the resulting file is a bunch of Mathematica commands
+	which can be read in with the "<<" command.
+
+About the source code
+	This disk also includes the complete source code to implement the
+	cochlear model.  This code has been tested on the following machines
+	and environments:
+		1)	Cray XMP 4/8 under Unicos 3.0 and 4.0 (48us per loop)
+			The all C version runs slower (2ms per loop)
+		2)	Sun 3/260 under Sun Unix 4.0 (37ms per loop with 68881)
+		3)	Apple Macitosh under MPW 3.0 (60ms per loop)
+	The program is written entirely in C but most of the kernel is also
+	written in Fortran so that the Cray can vectorize the code.  Makefiles
+	are provided for each of these environments.  Please contact the 
+	author if you would like this information in some other electronic
+	form than a Macintosh floppy. 
+
+	Note the times shown in paranthesis above are the time it takes that 
+	machine to execute one iteration through the cochlear loop.  This
+	loop implements the filtering, detection and AGC and is executed once
+	for every sample.  Any time faster than 64us is better than real time
+	for a speech signal digitized at 16khz.
+
+How to unpack this disk
+	The files on this floppy are archived and compressed using a utility
+	called StuffIt.  To unpack these files just double click on the icons
+	and click on the extract button.  The Mathematica related files (the
+	MathReader, the introductory notebook "Read This First" and Lyon's
+	Cochlear Model) are in an archive called Mathmatica.sit.  The source 
+	code, manual pages and documentation for the program are in another
+	archive called code.sit.
+
+	Contact the author if you would like this information in some other
+	format other than on a Macintosh floppy.
+
+
+If you have questions
+	If you have any questions the author can be reached at the following
+	addresses.  
+			Malcolm Slaney
+			Apple Computer
+			20525 Mariani Avenue
+			Cupertino, CA 95014
+			(408) 974-4535
+			malcolm@apple.com       <=====  Best Way

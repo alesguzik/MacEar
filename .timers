@@ -1,0 +1,17 @@
+0	EarCorrelation
+1	First Correlation FFT
+2	Complex Magnitude
+3	Second Correlation FFT
+4	Storing Lags
+5	CFFT2
+6	FILTERG
+7	UpdateDisplay
+8	CrayCorrelate Scaling
+9	Inner Correlate Loop
+10	EarStep
+11	First Hartley FFT
+12	Hartley Magnitude
+13	Second Hartley FFT
+14	Cray Fortran FFT 
+15	Cray Fortran AMAX 
+17	Annotate Display

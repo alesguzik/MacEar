@@ -1,0 +1,532 @@
+.TH EAR 1 Apple
+.SH NAME
+ear - Simulate the ear's response to a sound
+.SH SYNOPSIS
+ear [options]
+.SH DESCRIPTION
+This program simulates the propagation of sound in the human cochlea 
+(inner ear) and computes a picture of sound called a cochleagram.
+This program can optionally compute a correlogram 
+(autocorrelation of each channel) of the sound.
+The theory and implementation of the cochlear model are described in 
+\fILyon's Cochlear Model (The Mathematica Notebook)\fR 
+and the correlogram is described in 
+\fIA Duplex Theory of Pitch Perception.\fR
+The correlogram is one possible model for how humans perceive pitch,
+perform spatial localization, and form auditory images.
+.PP
+This program can compute two different kinds of cochleagrams and three
+different kinds of correlograms.  The two types of cochleagrams are based
+on a cascade of second order sections with a separate automatic gain control
+(AGC) and a hydrodynamics model with an integrated AGC.
+The cochlear model is determined at compile time.
+The three types of correlograms are those first proposed by James
+Licklider, Shihab Shamma and Roy Patterson.  The type of correlogram 
+computed can be set by the user from the command line.  
+See the references for more information about each of these models.
+.PP
+The input to this program is a file with sound samples in one of a number of
+different formats.
+The format of data in the input file is determined by the suffix of the file
+name.  
+The currently supported types (and their file suffixes) are listed below
+roughly in order of popularity.
+.TP
+adc
+MIT ADC format.  This format will be described shortly.
+.TP
+dac
+Byte swapped version of ADC format.  Some machines put the bytes of a word
+in different orders and there are a few ADC files that have been written 
+incorrectly.  This file format deals with the incorrect versions.
+.TP
+m22
+Macintosh MacRecorder Sound File.  This file is produced by MacRecorder and
+the sampled sound is in the data fork.  The resource fork specifies the
+sampling interval and other information and to pass this information to non 
+Macintosh programs the sampling rate is included in the file suffix.  
+The suffix \fIm22\fR specifies a 22khz sampling rate.
+.TP
+m11
+Macintosh MacRecorder Sound File.  Like above but an 11khz sampling rate.
+.TP
+m7
+Macintosh MacRecorder Sound File.  Like above but a 7 khz sampling rate.
+.TP
+aif
+Apple's Audio Interchange Format.  Most new Macintosh applications will
+support this format and it is described in a document available from the
+Apple Programmers and Developers Association (APDA).
+.TP
+dy22
+Dyaxis sound file, as produced by the IMS Dyaxis sound recording
+and playback system.  The sampling rate is 22050 Hz; the file has a
+512-byte header, 16-bit stereo interleaved samples with left channel
+first.  Each sample has high byte first.
+.TP
+dy44
+Dyaxis sound file.  As above but with a sampling rate of 44100 Hz.
+.TP
+sd
+Entropic Signal Processing Systems (ESPS) Waves format.  Note this is 
+a proprietary file format so this file format can only be read on machines
+that are licensed for the Waves system.
+.TP
+irc
+IRCAM file format.  This format is machine dependent.
+.TP
+macspeech
+MacSpeech (a Macintosh Speech Processing Workstation from GW Instruments)
+file format.  
+.TP
+snd
+NeXT machine sound file.  Variable-length header, then 16-bit samples
+(interleaved if stereo).  Sampling rate specified in the header.
+.TP
+wav
+Waveform file.  The file contains a stream of 16 bit samples with the low
+order byte first.  
+Since there is no header information
+the file is assumed to have a sampling rate of 16000 samples
+per second.
+.PP
+The MIT ADC file format is a simple stream of eight bit bytes.  
+All numbers are stored little-endian.
+Sixteen bit quantities are stored with the low order byte first, 
+while 32 bit numbers are stored in order from low byte to high byte.
+The header of an ADC file has the following quantities:
+.TP 20
+Header Size
+A 16-bit number representing the number of 16-bit words in the header.
+.TP
+Version Number
+A 16-bit number representing the version number of the header information.
+This description is for ADC file format version 1.
+.TP
+Channels
+A 16-bit quantity representing the number of channels in the input file.
+This program ignores this information and will only work properly for single
+channel input.
+.TP
+Sample Time
+A 16 bit quantity representing the number of 250ns clocks 
+between audio samples.
+The sample rate is given by dividing 4,000,000 by this number.  
+The 4MHz rate represents the clock rate of the 
+Digital Sound Corporation
+digital audio converters.
+.TP
+Length
+A 32 bit quantity (low order bytes first) that indicates how many samples
+are in the file.
+.PP
+Following the header there are zero or more filler words 
+(depending on the header size).
+The audio data follows the header.  
+Each sample is a 16-bit signed two's complement integer.
+This program assumes the data only has 12 bits of precision and that
+the upper four bits of each 16 bit word are zero.
+.PP
+There are two types of output from this program, a cochleagram and 
+a correlogram.
+The cochleagram is a picture that represents the firing rate of the inner
+hair cells in the cochlea.  
+The data is a function of time and cochlear channel.
+The correlogram is our name for the output of a model based on the James
+Licklider's Duplex theory of pitch perception.  
+The correlogram shows the autocorrelation of each cochlear channel and is
+good at detecting periodicities such as pitch in the input signal.
+The correlogram is a function of autocorrelation time lag, cochlear channel
+and time.
+The \fIof\fR and \fIcf\fR option direct the ear program to write a 
+cochleagram and/or a correlogram into the files specified.
+The format of these files is described below in the Output Format section.
+.PP
+There are two kinds of options to this program.  
+They are parameters that have a string or number value and those
+that are either on or off.
+In the descriptions that follow we have listed the default value for the 
+parameter in parenthesis.
+.PP
+Parameters that take a value are changed by listing 
+the name of the parameter
+followed by an "=" and then the new value.
+Depending on the parameter, the value will either be a file name
+or a number.
+For example the input file is set with an argument like "if=test.adc"
+(no spaces.)
+.PP
+Options that are either on or off are changed by listing the single letter 
+with either a plus (to turn the option on) or minus before the letter.  
+Multiple options can be turned
+on or off at the same time by listing multiple letters 
+following a single plus or minus sign
+(to turn the option off.)
+For example the string "+pdi" turns on the print, debug and impulse options.
+.PP
+The following I/O options are available.
+.TP 20
+if (data.adc)
+Input File - Input data is read from this file.  
+The format of this data must be specified by the file suffix (everything after
+the last period in the file name).  The available formats are described above.
+.TP 
+gain (1.0)
+Input Gain - This parameter is used to adjust the level of all input files.
+.TP 
+maxsamples (infinite)
+Maximum number of samples to read from input file - This is used to limit
+the number of samples of a signal that need to be computed.
+.TP
+of (cochlea.pic)
+Output File - The firing rate at each portion of the cochlea is 
+written to this file.
+For each output time the file will have the firing rate for 
+each of the channels of the
+cochlear model.  
+The channels are arranged from base to apex (or high to low frequency) as
+they are in the ear.
+The size of the output file is dependent on the parameters 
+of the ear model and are
+displayed when the program finishes execution.  
+.TP
+cf (None)
+Correlation File - The autocorrelation of each channel 
+of the cochlear output is placed in a sequence of files with names
+beginning with the value of this parameter.  
+The correlogram output will be placed into a sequence of files that
+have names starting with the value of this parameter.
+A unique file name for each sample of the correlogram is generated by
+appending the sound sample index to the string.
+Finally the image size (width by height) is appended to the name.
+The full name looks like this
+.br
+	{user supplied}{sample number}(width x height)
+.br
+Again the size of the file is
+dependent on the parameters of the ear model and is printed out after
+the program runs.  
+For the correlogram to be most useful the decimation factor
+.I (df)
+should be set to either 0 or 1.
+.PP
+The following parameters of the ear model can be set from the command line.
+See 
+.I 
+Lyon's Cochlear Model
+for more detailed information about
+what these parameters mean.
+.TP 20
+earq (8.0)
+This is the quality factor of each of the poles in the ear cascade.
+.TP 
+stepfactor (.25)
+Channels in the ear model are separated by this factor of the bandwidth
+of each ear stage.
+.TP
+breakf (1000)
+The bandwidth of stages above this frequency is approximately equal to 
+the frequency of the stage divided by the 
+.I earq
+(see above).  
+Below this frequency the bandwidth approaches a constant given by the
+value of 
+.I breakf
+divided by 
+.I earq
+.TP
+sharpness (5)
+This parameter described how much sharper the zeros in each stage of the
+cascade are than the poles.
+.TP
+offset (1.5)
+Zeros in the cascade-only filter bank are offset from the poles by this
+fraction of the filter spacing.
+.TP
+preemph (300)
+An initial preemphasis stage is used to roughly model 
+the outer and middle ears.
+The corner frequency of this high pass filter is given by this parameter.
+.TP
+tau1 (.640), tau2 (.16), tau3 (.04), tau4 (.01)
+These are the time constants (in seconds) of the four stages of Automatic
+Gain Control (AGC)
+.TP
+target1 (.0032), target2 (.0016), target3 (.0008), target4 (.0004)
+These are the target values for the four stages of AGC.
+The AGC can not provide a gain greater than one so each successive value 
+should be less than the previous values.
+.PP
+The following parameters are used to control the flow of data
+from the cochlear model to the correlogram code.  
+The decimation factor controls how often data is sent to the correlogram
+code and
+.I taufactor 
+controls a low pass filter that is used to prevent aliasing.
+.TP 20
+df (20)
+Decimation Factor - The output of the ear model 
+can be sampled at a lower rate than the incoming sound by
+smoothing and decimating.  
+One sample of the cochlea output will be placed into the output file for
+.I df
+input sample values.  
+Note that setting the decimation factor to 1 means that every sample from
+the cochlear model is output.  
+Setting the decimation factor to zero means output every value but do NOT
+perform the low pass filtering specified by the taufactor parameter.
+.TP
+taufactor (3)
+The output of the cochlear model is often decimated.  This parameter 
+specifies the frequency of the low pass filter used to prevent aliasing.
+Each channel of the cochlear output is passed through two first order 
+filters with a cutoff frequency given by taufactor times the output
+sampling frequency.  
+Note that this filtering is done on the output of each cochlear channel
+before the data is passed to the autocorrelation routines.
+If the df parameter is zero than no filtering is done.
+.PP
+A couple of parameters are available to describe the correlogram 
+(autocorrelation of the cochlea output) code.  
+The correlogram is actually implemented in this program by using FFT's.
+A fixed number of samples (given by twice the 
+.I clag 
+parameter) are placed into
+a buffer, the buffer is FFT'ed, squared and then inverse FFT'ed to get
+the autocorrelation of the sequence.
+The parameters are described below.
+.TP 20
+cor (lick)
+Correlogram Type - This parameter may be set to one of the three strings
+"lick", "shamma", or "patterson" to determine the type of correlogram to 
+compute.  See the references for information about these different models.
+.TP
+clag (256)
+This is the number of lags desired in the correlogram.  
+This parameter must be a power of two.
+.TP
+cstep (128)
+This is the number of samples between correlograms.  
+For best results this parameter should be no more than half of the
+.I clag
+parameter.
+.TP
+cpus (4)
+This parameter sets the number of CPUs that are used on machines that support
+parallel processing.  It is forced to one when debugging is enabled.
+.TP
+normalize (.75)
+Each (horizontal) line of the correlogram is normalized by the zero lag 
+value raised to this power.  A value of one means that correlation data
+is normalized so that the zero lag value is 1.
+Doing this removes any information in the correlogram about relative
+intensity of the different channels and hides the formants.  
+Values less than one are used to leave some relative intensity 
+information in the different channels.
+.PP
+A number of binary flags are available to control the execution of the program.
+These flags are turned on and off by prepending the character with either a
+plus (+) or minus (-) sign.
+.TP 20
+a (on)
+Turn on the four stages of Automatic Gain Control (AGC).
+.TP 
+c (on)
+Arrange the filters in a cascade.
+When this option is on the input signal is applied to all filters in parallel.
+This is useful for testing the response of each filter.
+.TP 
+d (off)
+Turn on some debugging output.
+.TP
+i (off)
+Use an impulse as input to this program.
+This option overrides the 
+.I if
+(input file) parameter.
+.TP
+l (off)
+Stretch the correlogram and display on a log time delay scale.  This
+means that all frequency motion is now seen as a translation instead of
+a stretching.
+.TP
+m (on)
+Find the difference of adjacent channels.
+This makes the output of the cochlea look sharper.
+.TP
+p (on)
+Print the parameters of the program.
+.TP
+t (off)
+Attempt to transform the Shamma correlogram into the normal
+frequency vs. time delay picture.
+.TP
+u (off)
+Display the correlogram output on the UltraBuffer at Apple.
+This is a frame buffer with an update rate of 100 megabytes/second and
+is used to provide near real time display of the correlogram output.
+To get the best performance the decimation factor
+.I (df)
+is set to one.
+.TP
+v (off)
+Compute and display the correlogram at NTSC video frame rates (29.85 Hz).
+.SH EXAMPLES
+.ta 1i
+.PP
+The following command will show the response of the cochlea to an impulse.
+.br
+	ear +i
+.LP
+The output will be a file called \fIcochlea.pic\fR with 86
+samples per time step.
+The decimation factor can be changed to one so that the response at each
+point in the cochlea is output at each sample time using:
+.br
+	ear df=1 +i
+.br
+The following command is used to test the output of the correlogram model.
+This will compute the cochleagram for an impulse input and pass every sample
+(because of df=1) to the correlogram code.  
+.br
+	ear df=1 +i cf=tmp/f
+.br
+The resulting correlogram files will be placed into the subdirectory \fItmp\fR.
+Within this directory a file will be written for each 128 (\fIcstep\fR)
+samples of the input.  
+The \fIcf=\fR parameter specifies the initial part of the name for
+each correlogram file.
+To this prefix will be appended the sample number for this image of the
+correlogram and a string to indicate the width and height of the image.
+.PP
+The first file of the correlogram output will be named \fItmp/f00001(256x84)\fR.
+This file contains the first correlogram 
+and the string \fI(256x84)\fR indicates the width 
+(128 autocorrelation time lags) and height (84 cochlear channels)
+of the image in a format that is useful for NCSA ImageTool on the Macintosh.
+Succeedings files will be named with the sample time and will be separated
+by intervals of \fIcstep\fR samples 
+(for example \fItmp/f00002(256x84)\fR and \fItmp/f00003(256x84)\fR).
+.SH OUTPUT FORMATS
+The distributed version of this program supports two kinds of output formats.
+The simplest format has no header and just consists of a string of numbers in
+the file.   It is called the raw format.
+The other format is known as the Oregon Graduate Institute/CMU Syncreps format.
+This is a specialized format but it does show how to modify the code to
+support other file formats.  These options are set as compiler options and
+are described shortly.
+.PP
+Files in the raw format contain just a list of numbers.  There is no
+header on the files.  The numbers in this format can be written as either
+binary floating point numbers, eight bit unsigned bytes or readable ASCII
+text.  The desired output format is set using the C compiler preprocessor.
+This is described at the end of this section.
+.PP
+Cochleagrams are a function of cochlear channel and time.  
+For each output time (controlled by the \fIdf\fR parameter) 
+a number is written out for each cochlear channel that represents
+the inner hair cell firing rate.  
+For each output time the cochlear channels are written from base to apex
+(high to low frequency).  See the paper \fILyon's Cochlear Model\fR for
+the definition of the center frequency of each channel.  
+Succeeding times are appended to the cochleagram file.
+.PP
+Correlograms are a function of autocorrelation time lag, cochlear channel
+and sample time.
+A correlogram is written as a number of output files with the data from
+each output time written to a separate file.  
+The names of the output files is described above in the description of the 
+\fIcf\fR parameter.
+Within each correlogram file the data is written as a 
+string of autocorrelations.
+Starting at the base of the cochlea (high frequency) 
+a string of \fIclag\fR numbers is written that represent the autocorrelation.
+The first number represnts the zero lag case and succeeding numbers represent
+lags separated by the sample time.  The channels of the correlogram are
+written in order from base of the cochlea 
+(high frequency) to apex (low frequency.)
+.PP
+Most options to this program are controlled from the command line.  
+One option that is set at compile time is the format of the output file.
+Output files (cochleagrams and correlograms) can be output in either 
+raw format or in the OGC/CMU Syncreps file format.  
+In the raw file format the data can be written out as raw binary floating 
+point data, ASCII text or as 8 bit unsigned bits.
+These options are defined in the include file ear.h.
+.SH SEE ALSO
+.PP
+We have implementations of two versions of Richard Lyon's cochlear models.  
+The first is a relatively simple model that combines a cascade of 
+second order digital filters (to model 
+propagation along the basilar membrane) with a stage of detectors and then four 
+automatic gain control stages to model auditory adaptation.
+.PP
+The theory behind the second order cascade model can be found in:
+.IP
+Richard F. Lyon,  "A computational model of filtering, detection and
+compression in the cochlea," in 
+\fIProceedings of the IEEE International Conference Acoustics, 
+Speech and Signal Processing, \fR
+Paris, France, May 1982.
+.PP
+Information on the implementation of the second order cascade model 
+can be found in the following publication:
+.IP
+Malcolm Slaney,  "Lyon's Cochlear Model," Apple Technical Report #13, 
+November 1988 (This report is available from the Apple Corporate Library, 
+Cupertino, CA 95014).
+.PP
+The second cochlear model is based on a hydrodynamics analysis of 
+the cochlea and is explained in:
+.IP
+Richard F. Lyon and Carver Mead, "Cochlear Hydrodynamics Demystified," 
+CalTech Computer Science Technical Report Caltech-CS-TR-88-4, 1989.
+.IP
+Richard F. Lyon and Carver Mead, "An Analog Electronic Cochlea," IEEE Trans. 
+ASSP., July 1988.
+.PP
+Note, the hydrodynamics model is relatively new and is still in the 
+process of being refined.
+.PP
+The cochlear model provides input to one of three models of a higher 
+process in the brain that we generically call the correlogram.  The 
+correlogram produces a two dimensional movie that we believe is 
+useful for explaining pitch perception, sound separation and grouping 
+results.
+.PP
+The original correlogram was described by James Licklider and is 
+described in:
+.IP
+J. C. R. Licklider, "A Duplex Theory of Pitch Perception," in 
+\fIPsychological Acoustics, \fR
+E. D. Schubert, ed., Dowden, Hutchingson and Ross,  Inc., 
+Stroudsburg, PA, 1979.
+.PP
+We also support a approximation to the correlogram first proposed 
+by Shihab Shamma and described in:
+.IP
+Shihab Shamma, Naiming Shen and Preetham Gopalaswamy, "Stereausis: Binaural 
+processing without neural delays," 
+\fI J. Acoustical Society of America, \fR
+Volume 86 
+(3), September 1989, pp. 989-1006.
+.PP
+Finally, Roy Patterson has proposed a correlogram model called the 
+Triggered Temporal Integration scheme that is a refined version of 
+his Pulse Ribbon Model.  The Temporal Integration scheme is 
+described in:
+.IP
+Roy D. Patterson and John Holdsworth, "A functional model of neural activity 
+patterns and auditory images," to appear in 
+\fI Advances in Speech, Hearing and Language Processing Volume 3, \fR
+edited by W. A. Ainsworth, JAI Press, London.
+
+.SH DISCLAIMER
+Even though Apple has reviewed this software, Apple makes no warranty
+or representation, either express or implied, with respect to this
+software, its quality, accuracy, merchantability, or fitness for a 
+particular purpose.  As a result, this software is provided "as is,"
+and you, its user, are assuming the entire risk as to its quality
+and accuracy.
+.PP
+Copyright (c) 1988-1990 by Apple Computer, Inc.

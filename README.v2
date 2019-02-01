@@ -1,0 +1,409 @@
+			Release Notes for
+			Version 2 of
+			Lyon's Cochlear Model
+			August 11, 1989
+
+This note describes the latest implementation of Lyon's Cochlear
+Model.  More information about this code can be found in the following
+publication:
+
+	Malcolm Slaney,  "Lyon's Cochlear Model," Apple Technical 
+	Report #13, November 1988.
+
+This report is available from the Apple Corporate Library.  This
+release of the ear code also supports a model of pitch perception
+called the correlagram.  This model is documented in the following
+publications:
+	Lyon, Richard F., "A computational model of  filtering, 
+	detection and compression in the cochlea," in Proceedings 
+	of the IEEE International Conference Acoustics, Speech and 
+	Signal Processing, Paris, France, May 1982.
+
+	Licklider, J. C. R., "A Duplex Theory of Pitch Perception," 
+	in Psychological Acoustics, E. D. Schubert, ed., Dowden, 
+	Hutchingson and Ross,  Inc., Stroudsburg, PA, 1979.
+
+The following statement applies to the software enclosed here:
+
+	Even though Apple has reviewed this software, Apple makes 
+	no warranty or representation, either express or implied, 
+	with respect to this software, its quality, accuracy, 
+	merchantability, or fitness for a particular purpose.  
+	As a result, this software is provided "as is," and you, 
+	its user, are assuming the entire risk as to its quality and
+	accuracy.
+
+	Copyright (c) 1988-1989 by Apple Computer, Inc.
+
+You are free to use this program in your own research but we do ask if
+you publish any results based on this code that you give Apple Computer
+appropriate credit.
+
+The enclosed floppy contains the source code in C for an implementation
+of Lyon's cochlear model.  This code has been tested and runs correctly
+on the following machines: Cray, Stellar, SGI, Sun-3, Sun-4, VAX,
+Sequent Balance and Macintosh (both LightSpeed C and MPW).  This
+release is especially interesting since it includes a standard
+double-clickable Macintosh application that can be run on any Macintosh
+II.  (It is possible to change the makefiles and compile this code to
+run it on machines without a MC68881 but the resulting program would
+not run very fast.)
+
+This program takes as input a sound file (in a number of different file
+formats) and produces either a cochleagram or a correlagram.  A
+cochleagram is a representation that roughly corresponds to spectral
+energy as a function of time.  A correlagram is our implementation of
+Licklider's duplex model of pitch perception.   A correlagram shows the
+short time autocorrelation for each time slice of each cochlear
+channel.  The result is a two dimensional movie.
+
+This floppy also contains the latest copy of NCSA ImageTool.  The
+National Center for Supercomputer Applications (NCSA) wrote ImageTool
+to make it easier for researchers to display the results of
+supercomputer applications on local workstations.  The version of NCSA
+ImageTool supplied on the floppy is appropriate for a Macintosh.
+Contact the NCSA at the University of Illinois in Champaign, IL if you
+are interested in ImageTool on other platforms.
+
+Configuration
+Most of the parameters for this model are set on the command line
+(Unix) or using a dialogue box (Macintosh).  These parameters are fully
+described in the Unix manual page and allow you to change, for example,
+the filter width and the correlation length.
+
+One option that is not set from the command line is the type of file
+output.  Depending on the software you are using to analyze the output
+of the ear model you might want the output files to be binary floating
+point, unsigned 8 bit bytes or readable ASCII text.  These options are
+selected by choosing the appropriate definition in the ear.h include
+file.  The Macintosh application (MacEar) on this floppy is configured
+with the BYTEOUTPUT option so that all output files are 8 bit unsigned
+bytes.  This is the type of output that NCSA ImageTool expects.  The
+sources are distributed with the FLOATOUTPUT option already enabled.
+This makes it easier to test the output and verify that the compiler
+and the code  are working as advertised.
+
+Custom output types are also possible.  Look for the preprocessor
+symbol "OGC" for an example of how to add your favorite file format.
+
+Correlagram Parameters
+When computing correlagrams we have decided that the following
+parameters yield more pleasing results then the defaults.  Note that
+these values will probably change as we get more experience with this
+model.  Contact the author for the latest parameters.
+
+taufactor=1 - This parameter gives the location of a first order low
+pass filter that is used to prevent aliasing in the correlagram.  The
+standard value is three.
+
+df=1 - This sets the decimation factor to one so that each output
+sample from the cochleagram is passed to the correlation algorithms.
+
+clag=512 - This is the number of lags to compute in the correlation.
+This implementation of the correlagram is implemented with FFTs and a
+Hamming window is used to reduce the edge effects.  Only half of the
+autocorrelation output is shown because of the additional error
+introduced by the window at the end of the correlation.
+
+normalize=.5 - The correlagram output is normalized by dividing each
+value by the largest value in the correlagram raised to this power.
+This provides a bit of compression.
+
+earq=4 - The sharpness of the earfilters is changed from 8 to 4 thus
+making the filters wider.  We think this agrees with the physics of the
+ear.  The sharp tuning curves measured by most researchers is probably
+due to the Automatic Gain Control.
+
+stepfactor=.125 - When the earq is changed it is also necessary to
+change the stepfactor so that the number of filters per band remains
+approximately constant.
+
+Using the Macintosh Implementation
+The best way to compute a correlagram is to first create an empty
+folder to contain the output files.  Using the "Correlation Output
+File" entry in the main dialogue box the name of this empty folder and
+a small file prefix should be entered.  The resulting correlagram data
+will be written, one time slice per file, into files that are named by
+combining the file prefix with the numerical sample number and the file
+size.   This directory can then be specified in the Animate option of
+NCSA ImageTool to see the resulting correlagram.  If you recompile this
+application on the Macintosh you will need to make sure that the
+BYTEOUTPUT option is selected in the ear.h include file.
+
+When this application is run on a Macintosh (double click on the MacEar
+file) a dialogue box is put on the screen and the user can specify the
+following parameters
+
+Input File Name - The name of the file containing the input data in one
+of the following formats: ADC, WAV (raw bytes at 16 khz), floating
+point numbers (at 16 khz sampling interval) or Macintosh SoundEdit
+files (the file suffix, m7, m11 or m22 specifies the sampling interval
+in khz.)  The default name for the input file is data.adc.
+
+Output File Name - The resulting cochleagram is written into this file
+as a two dimensional array of floating point numbers.  For each output
+time slice all channels are written with the highest frequency channel
+(closest to the base) written first.
+
+Correlagram Output File - If a file name is specified then a
+correlagram is computed.  The resulting correlations are stored in
+files named by the file name concatenated with the input sample
+number.  Since a large number of output files are computed it is best
+if the file name prefix is in an otherwise empty folder.  The files are
+stored as an array of bytes and the image size is included in the file
+name as needed by ImageTool.
+
+The other parameters in the dialogue box are described in the Unix
+manual page for this software.
+
+You can create input files for this code in a couple of different
+ways.  If you have access to the Macintosh programs MacRecorder and
+SoundEdit (from Farallon) then you can create sound files with
+SoundEdit and process them with MacEar.  MacEar does not understand
+file types you must use the proper file suffix (m7, m11, m22 depending
+on sampling rate) to tell MacEar which file format you are using.
+Alternatively you can use your favorite programming language to create
+an ADC file.  Please note that the description of the ADC format
+published with Apple Technical Report #13 was wrong.  A corrected
+version of the manual page is included.
+
+Timing
+
+The following table should give you a rough estimate of the speed of
+this code on various architectures.  The numbers on the SGI, Stellar
+and Sequent machines represent the speed of the unoptimized program and
+should be considered a worst case.  Using the parallel pipelines and
+multiple processors on these machines should allow even greater speeds.
+These optimizations have already been done for the Cray.
+
+This table shows the amount of time it will take to compute a
+cochleagram and correlagram for one second of speech input.  Note that
+the total run time of this program when computing a correlagram will be
+the cochleagram time plus the correlagram time.  This table assumes a
+16 khz sampling interval and computing a correlagram 62.5 times a
+second.
+
+Machine Cochleagram     Correlagram     Notes
+Cray XMP 4/8            1s              1.2s
+SGI             	29s             116s    Unoptimized
+Stellar         	147s            531s    Unoptimized
+Sun-4           	147s            612s
+VAX 11/8600             147s            687s
+NeXT            	280s            1244s
+Sequent Balance (1uP)   326s            1375s   Compiled with -f1167
+Sun 3-160               584s            3125s   Compiled with -ffpa
+Sequent Balance (1uP)   601s            2625s   80387 floating point
+MacII (MPW)             968s            4731s
+MacII (LightSpeed)      1187s           4768s
+
+Note, that the correlagram code runs on all four processors of our
+Cray.  If you want to compare your favorite machine to a Cray then the
+ratios you compute using the correlagram times will be four times
+higher than if you use the cochleagram times.
+
+Testing
+This program has been tested on a number of different machines and it
+is believed to be portable.  But with changing software and new
+machines it is hard to be guarantee perfect results.  The following
+table lists the first 40 output values in one of the correlagram output
+files.  If you get these values on your machine you can be pretty sure
+that you have a working program.  (For example some of the early Sun-4
+C compilers do not compile the complex number part of this program
+correctly.)
+
+These values correspond to the first 40 values of the correlagram at
+sample number 256.  The correlagram was computed with an impulse input
+and a decimation factor of 1.  All other parameters were left as the
+default values.  See the installation instructions for your machine for
+more details.
+	0.195377        0.189904        0.177765        0.159345
+	0.139094        0.119075        0.100709        0.0846115
+	0.0706457       0.0588005       0.0486537       0.0401317
+	0.0329156       0.0269265       0.0219505       0.0178976
+	0.0146134       0.0119977       0.00992131      0.00829443
+	0.00700704      0.00599529      0.00517166      0.00450445
+	0.00393385      0.00345277      0.0030259       0.00265654
+	0.0023235       0.00203234      0.00176916      0.00153883
+	0.00133157      0.00115085      0.000989414     0.000849415
+	0.000725371     0.000618426     0.000524416     0.000443835
+
+Unix Installation
+To install this program on a Unix machine do the following.
+
+1)      Copy all of the source files into a directory.  You might want
+to use a program like NCSA Telnet (and the builtin FTP program) to
+transfer the files from the Macintosh to your Unix machine.  Or contact
+the author to get the sources via FTP over the Internet or on tape.
+
+2)      Type the command        make -f Makefile.unix depend
+
+3)      Type the command        make -f Makefile.unix ear
+
+4)      Type the command        mkdir tmp
+
+5)      Run the command         ear +i df=1 cf=tmp/f
+
+6)      Verify the output with  od -f "tmp/f00256(256x84)"
+
+Note that not all machines support the "-f" (floating point) option.
+This is especially true of System V machines.  In these cases edit the
+file ear.h and specify the TEXTOUTPUT option.  (See the comments in
+this include file for more details.)  You can then remake the program
+and now the file "tmp/f00256(256x84)" is a text file.
+
+Cray Installation
+To install this program on a Cray supercomputer running Unicos 5.0 or
+higher do the following.
+
+1)      Copy all of the source files into a directory.  You might want
+to use a program like NCSA Telnet (and the builtin FTP program) to
+transfer the files from the Macintosh to your Cray.  Or contact the
+author to get the sources via FTP over the Internet or on tape.
+
+2)      Type the command        make depend
+
+3)      Type the command        make fear
+
+4)      Type the command        mkdir tmp
+
+5)      Run the command         fear +i df=1 cf=tmp/f
+
+6)      Verify the output with  od -f "tmp/f00256(256x84)"
+
+Macintosh Installation
+The enclosed floppy contains a ready to run application that computes
+cochleagrams and correlagrams.  To see the output do the following.
+
+0)      So that the software can fit onto one floppy it is distributed
+as two StuffIt archives.  The first archive contains the ear model
+source and MacEar application.  The second archive contains the NCSA
+Image Application.   You should copy these archives onto your hard disk
+and then double click on them.  They will automatically be expanded
+into the files.
+
+1)      Create an empty folder and name it correlation
+
+2)      Double click on the MacEar application.  A large dialogue box
+will appear.
+
+3)      Click on the button next to "Correlation Output File" a
+standard file dialogue box will appear.  This button is labeled SET and
+is shown in the screen dump after these installation directions.
+
+4)      Open the correlation folder that was created in step one.
+
+5)      Type the file name f and then click the save button.
+
+6)      Click on the radio button next to "Turn on Impulse Input."
+
+7)      Change the decimation factor from 20 to 1.   When this change
+is made the box at the beginning of the line will be checked to
+indicate the parameter change.
+
+8)      Click the OK button at the bottom of the dialogue box and a
+large window will be placed on the screen showing all the parameters of
+the ear model.  The calculations of the correlagram will finish in
+about 4 minutes (on a Mac-II) and will create four files.  One is
+called cochlea.pic (the default cochleagram output file) and the three
+correlagrams files are in the folder created in step 4.
+
+9)      Choose the quit option from the file menu.
+
+10)     Now double click on the NCSA ImageTool icon.
+
+11)     Select the Color Table and then the Lightness entry in the
+Palettes menu to set the palette to gray.
+
+12)     Now use the "Open..." option in the File menu and select the
+"cochlea.pic" in the original ear folder.
+
+13)     The size of the image is x=84 by y=512.  The image will be
+oriented as shown below.  This is a cochleagram of an impulse.
+		[Picture deleted in ASCII Version.]
+
+	The picture below shows part of the cochleagram of a speech
+	signal.  The signal used to generate this cochleagram is
+	supplied on the floppy as data.adc (this is the name of the
+	default input file for MacEar.)
+		[Picture deleted in ASCII Version.]
+
+14)     Now choose the "Animate -> From Memory" option from the File
+menu.
+
+15)     Select the correlation directory that was created in step 1
+above.
+
+16)     The sizes of the images are correctly listed in the file name
+so ImageTool has the correct sizes.  Click on the OK button.
+
+17)     Select the forward option from the animation menu to see the
+correlagram animation.  The image is oriented as shown in the picture
+below.  This is approximately what the last image of the correlagram of
+the impulse should look like.
+		[Picture deleted in ASCII Version.]
+
+	The image below shows a time sample of a correlogram.  The dark
+	horizontal bands indicate formants and the vertical lines show
+	the pitch of the signal.
+		[Picture deleted in ASCII Version.]
+
+	Consult the NCSA Image documentation for other graphics and
+	animation options.  For example you might want to change the
+	scaling of the picture using the interpolate option under the
+	tools menu.
+
+Note that all the source files are supplied so that you can modify the
+sources and create a new application.  This can be done using either
+Symantec's LightSpeed C or Apple's MPW programming environment.  If you
+recompile the sources on the Macintosh be sure to check that the output
+type option is set correctly in the ear.h file.
+
+Please note that the Macintosh version MacEar will not overwrite
+existing files.  If you run the program once and a file is created it
+will not be changed if you run the program again.  You must first drag
+the file to the trash and empty it or choose a different file name.
+
+Because of the computational requirements this is not a typical
+Macintosh application.  This application can easily consume a large
+fraction of the available CPU time.  This application relinquishes the
+CPU periodically but probably not often enough for other applications
+running in the background.Macintosh Dialog Box
+
+		[Picture deleted from ASCII verion.]
+The figure above shows the dialog box that is placed on the screen when
+MacEar is launched.  The SET buttons along the top left allow the user
+to change the input source and the cochleagram and correlagram output
+files.  Clicking on one of these buttons brings up the normal Macintosh
+file dialog.  The box on the right will show the selected file.  The
+format of these files is described in the Unix manual page for the ear
+program.
+
+Below the file section are a pair of radio buttons that override the
+input file and specify that an impulse should be used.  This is useful
+for testing.
+
+The rest of the dialog box is used to change te parameters of the ear
+model.  The check box on the far left indicates that the parameter is
+changed from the default.  The values on the right can be edited like
+any other Macintosh text field.  The meaning of these parameters is
+described in the Unix manual page and in the technical report.
+
+Acknowledgements
+
+I would like to thank Steve Rubin (at Apple) for writing and
+maintaining the module that creates a Macintosh dialogue box from a
+Unix style command line.  I also want to thank Richard Duda (at San
+Jose State) and Ron Cole (at the Oregon Graduate Center) for helping me
+test early releases of this code.  Thanks to Dave Mellinger (at Stanford
+CCRMA) for the Dyaxis and NeXT support.
+
+For more information
+For more information please contact the author at
+	Malcolm Slaney
+	Speech and Hearing Project
+	Advanced Technology Group
+	Apple Computer
+	20525 Mariani Avenue
+	Cupertino, CA 95014
+	(408) 974-4535
+	malcolm@apple.com
